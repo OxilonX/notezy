@@ -4,26 +4,25 @@ import Stack from "@mui/material/Stack";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import TextField from "@mui/material/TextField";
-import Dialog from "@mui/material/Dialog";
-import DialogContent from "@mui/material/DialogContent";
-
 //MUI Icons imports
 import AddIcon from "@mui/icons-material/Add";
-import DoneIcon from "@mui/icons-material/Done";
 
 //Project Components imports
 import Note from "../Components/Note";
+import NoteDialog from "../Components/NoteDialog";
 
 //React utilities
-import { useState, useContext } from "react";
+import { useState, useContext, useMemo } from "react";
 import NotesContext from "../Contexts/NotesContextProvider";
 
 export default function Notes() {
   const { notes, setNotes } = useContext(NotesContext);
   const [noteTitleInput, setNoteTitleInput] = useState("");
-  function handleAddNoteBtnClick() {
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [isShowDialog, setIsShowDialog] = useState(false);
+  function handleAddNoteBtnClick(e) {
+    e.preventDefault();
     if (!noteTitleInput.trim()) return;
-    console.log(notes);
     const newNote = {
       id: crypto.randomUUID(),
       title: noteTitleInput,
@@ -31,15 +30,29 @@ export default function Notes() {
       content: "",
       category: "",
     };
-
     setNotes((n) => {
       return [...n, newNote];
     });
+    setSelectedNote(newNote);
+    setIsShowDialog(true);
     setNoteTitleInput("");
   }
-  const notesUI = notes.map((n) => {
-    return <Note key={n.id} note={n} />;
-  });
+
+  const notesUI = useMemo(
+    () =>
+      notes.map((n) => {
+        return (
+          <Note
+            key={n.id}
+            note={n}
+            show={setIsShowDialog}
+            selected={selectedNote}
+            setSelected={setSelectedNote}
+          />
+        );
+      }),
+    [notes]
+  );
   return (
     <>
       <div className="flex flex-col gap-2 -mt-5 px-6">
@@ -60,7 +73,7 @@ export default function Notes() {
         </Stack>
 
         {/* {Add Note Form} */}
-        <div action="">
+        <form>
           <Grid
             className="flex items-center fixed bottom-2 left-12  w-full"
             container
@@ -71,10 +84,10 @@ export default function Notes() {
                 className="w-full"
                 label="Add a Note Title"
                 id="outlined-size-small"
-                defaultValue=""
                 size="medium"
                 color="primary"
                 variant="filled"
+                autoComplete="off"
                 value={noteTitleInput}
                 onChange={(e) => {
                   setNoteTitleInput(e.target.value);
@@ -87,49 +100,21 @@ export default function Notes() {
                 variant="contained"
                 className="font-[900]"
                 sx={{ width: 200, height: 54 }}
+                type="submit"
               >
                 add Note
               </Button>
             </Grid>
           </Grid>
-        </div>
+        </form>
 
         {/* {Note Dialog} */}
-        <Dialog fullWidth maxWidth="lg" className="scrolling ">
-          <DialogContent className="bg-[#f0f4c3] ">
-            <Stack direction={"row"} justifyContent={"space-between"}>
-              <div className="px-2">
-                <h1 className="text-4xl ">note.title</h1>
-                <p>t.time</p>
-              </div>
-              <IconButton>
-                <DoneIcon fontSize="large" />
-              </IconButton>
-            </Stack>
-
-            <TextField
-              multiline
-              fullWidth
-              variant="filled"
-              placeholder="Write your note here..."
-              sx={{
-                "& .MuiFilledInput-root": {
-                  backgroundColor: "#f0f4c3",
-                  color: "#000",
-                  "&:hover": {
-                    backgroundColor: "#f0f4c3",
-                  },
-                  "&.Mui-focused": {
-                    backgroundColor: "#f0f4c3",
-                  },
-                  "& .MuiInputBase-input": {
-                    color: "#000",
-                  },
-                },
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        <NoteDialog
+          updateNotes={setNotes}
+          note={selectedNote}
+          show={isShowDialog}
+          setShow={setIsShowDialog}
+        />
       </div>
     </>
   );
